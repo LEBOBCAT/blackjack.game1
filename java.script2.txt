@@ -1,0 +1,111 @@
+const suits = ['♠', '♥', '♦', '♣'];
+const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+let deck = [];
+let playerHand = [];
+let dealerHand = [];
+let gameOver = false;
+
+const dealerHandDiv = document.getElementById('dealer-hand');
+const playerHandDiv = document.getElementById('player-hand');
+const dealerScoreDiv = document.getElementById('dealer-score');
+const playerScoreDiv = document.getElementById('player-score');
+const resultMessage = document.getElementById('result-message');
+
+document.getElementById('hit-btn').addEventListener('click', hit);
+document.getElementById('stand-btn').addEventListener('click', stand);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+
+function createDeck() {
+  let d = [];
+  for (let suit of suits) {
+    for (let value of values) {
+      d.push({ suit, value });
+    }
+  }
+  return d.sort(() => Math.random() - 0.5);
+}
+
+function getCardValue(card) {
+  if (['J', 'Q', 'K'].includes(card.value)) return 10;
+  if (card.value === 'A') return 11;
+  return parseInt(card.value);
+}
+
+function calculateScore(hand) {
+  let score = 0;
+  let aceCount = 0;
+  for (let card of hand) {
+    score += getCardValue(card);
+    if (card.value === 'A') aceCount++;
+  }
+  while (score > 21 && aceCount > 0) {
+    score -= 10;
+    aceCount--;
+  }
+  return score;
+}
+
+function renderHand(hand, container) {
+  container.innerHTML = '';
+  for (let card of hand) {
+    let cardDiv = document.createElement('div');
+    cardDiv.className = 'card';
+    cardDiv.textContent = `${card.value}${card.suit}`;
+    container.appendChild(cardDiv);
+  }
+}
+
+function updateScores() {
+  dealerScoreDiv.textContent = `Score: ${calculateScore(dealerHand)}`;
+  playerScoreDiv.textContent = `Score: ${calculateScore(playerHand)}`;
+}
+
+function hit() {
+  if (gameOver) return;
+  playerHand.push(deck.pop());
+  renderHand(playerHand, playerHandDiv);
+  updateScores();
+  let playerScore = calculateScore(playerHand);
+  if (playerScore > 21) {
+    endGame('You busted! Dealer wins.');
+  }
+}
+
+function stand() {
+  if (gameOver) return;
+  while (calculateScore(dealerHand) < 17) {
+    dealerHand.push(deck.pop());
+  }
+  renderHand(dealerHand, dealerHandDiv);
+  updateScores();
+
+  const playerScore = calculateScore(playerHand);
+  const dealerScore = calculateScore(dealerHand);
+
+  if (dealerScore > 21 || playerScore > dealerScore) {
+    endGame('You win!');
+  } else if (dealerScore === playerScore) {
+    endGame("It's a draw!");
+  } else {
+    endGame('Dealer wins!');
+  }
+}
+
+function endGame(message) {
+  gameOver = true;
+  resultMessage.textContent = message;
+}
+
+function startGame() {
+  deck = createDeck();
+  playerHand = [deck.pop(), deck.pop()];
+  dealerHand = [deck.pop()];
+  gameOver = false;
+  resultMessage.textContent = '';
+  renderHand(playerHand, playerHandDiv);
+  renderHand(dealerHand, dealerHandDiv);
+  updateScores();
+}
+
+startGame();
